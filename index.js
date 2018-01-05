@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose()
 
 function mixin(a, b) {
-	for(var k in b) {
+	for(let k in b) {
 		a[k] = b[k]
 	}
 	return a
@@ -9,13 +9,10 @@ function mixin(a, b) {
 
 class sqliteDataBase {
 	constructor(filename, callback) {
-		this.db = new sqlite3.Database(filename, e => {
-			callback(this)
-		});
+		this.db = new sqlite3.Database(filename, e => callback(this));
+
 		this._readyResolve;
-		this._process = new Promise((resolve, reject) => {
-			this._readyResolve=resolve
-		})
+		this._process = new Promise((resolve, reject) => this._readyResolve = resolve)
 	}
 
 	ready(fn) {
@@ -23,12 +20,12 @@ class sqliteDataBase {
 	}
 
 	pushTable() {
-		var _process= Promise.all(Array.from(arguments, table => {
+		this._process = Promise.all(Array.from(arguments, table => {
 			return new Promise((resolve, reject) => {
-				var sql = "CREATE TABLE IF NOT EXISTS " + table.tableName + "(",
-					fields = [];
+				let sql = "CREATE TABLE IF NOT EXISTS " + table.tableName + "(";
+				const fields = [];
 
-				for(var field in table.fields) {
+				for(let field in table.fields) {
 					fields.push("[" + field + "] " + table.fields[field].join(" "))
 				}
 
@@ -36,16 +33,14 @@ class sqliteDataBase {
 					fields.push("PRIMARY KEY (" + table.primaryKey.join(",") + ")")
 				}
 
-				var _table = this[table.tableName] = new Table(this.db, table.tableName, table.fields, table.primaryKey, table.uniqueKey)
-				this.db.run(sql + fields.join(",") + ")", undefined, () => {
-					resolve(_table)
-				})
+				const _table = this[table.tableName] = new Table(this.db, table.tableName, table.fields, table.primaryKey, table.uniqueKey)
+				this.db.run(sql + fields.join(",") + ")", undefined, () => resolve(_table))
 			})
-		})).then((e)=>{
-			this._readyResolve(this)
+		})).then((e) => {
+			this._readyResolve(this);
+			return this
 		});
-		this._process=_process;
-		return _process
+		return this._process
 	}
 
 	transaction(callback, serialize) {
@@ -59,9 +54,7 @@ class sqliteDataBase {
 				this.db.run("ROLLBACK")
 			};
 
-		serialize ? this.db.serialize(() => {
-			callback(begin, commit, rollback)
-		}) : callback(begin, commit, rollback)
+		serialize ? this.db.serialize(() => callback(begin, commit, rollback)) : callback(begin, commit, rollback)
 	}
 }
 
@@ -76,7 +69,7 @@ class Table {
 	}
 
 	_get_insert_params(data) {
-		var fields = [],
+		const fields = [],
 			params = [];
 
 		this.fieldsKeys.forEach(k => {
@@ -93,7 +86,7 @@ class Table {
 	}
 
 	_get_where_params(data, _uniqueKey, join) {
-		var where = [],
+		const where = [],
 			params = [],
 			s = join ? " OR " : " AND ",
 			uniqueKey = _uniqueKey || this.primaryKey;
@@ -114,24 +107,18 @@ class Table {
 	}
 
 	_select(where, fields, type) {
-		var sql = ['SELECT', fields ? fields.join(',') : '*', 'FROM', this.tableName];
-		var _this = this;
-		var params = where && where.params || [];
+		const sql = ['SELECT', fields ? fields.join(',') : '*', 'FROM', this.tableName],
+			params = where && where.params || [];
+
 		return new Promise((resolve, reject) => {
 			if(where) {
 				sql.push('WHERE', where.where)
 			}
 			if(type === "each") {
-				var ary = [];
-				_this.db[type](sql.join(' '), params, (ERR, rst) => {
-					ERR ? reject(ERR) : ary.push(rst)
-				}, (ERR, rst) => {
-					ERR ? reject(ERR) : resolve(ary)
-				})
+				const ary = [];
+				this.db[type](sql.join(' '), params, (ERR, rst) => ERR ? reject(ERR) : ary.push(rst), (ERR, rst) => ERR ? reject(ERR) : resolve(ary))
 			} else {
-				_this.db[type](sql.join(' '), params, (ERR, rst) => {
-					ERR ? reject(ERR) : resolve(rst)
-				})
+				this.db[type](sql.join(' '), params, (ERR, rst) => ERR ? reject(ERR) : resolve(rst))
 			}
 		})
 	}
@@ -153,95 +140,63 @@ class Table {
 	}
 
 	select(fields) {
-		var _this = this;
-		return new Promise((resolve, reject) => {
-			_this.db.all(['SELECT', fields ? fields.join(',') : '*', 'FROM', _this.tableName].join(' '), (ERR, rst) => {
-				ERR ? reject(ERR) : resolve(rst)
-			})
-		})
+		return new Promise((resolve, reject) => this.db.all(['SELECT', fields ? fields.join(',') : '*', 'FROM', this.tableName].join(' '), (ERR, rst) => ERR ? reject(ERR) : resolve(rst)))
 	}
 
 	insert(data, isResult) {
-		var p = this._get_insert_params(data);
-		return new Promise((resolve, reject) => {
-			if(p) {
-				this.db.run(['INSERT INTO', this.tableName, "(" + p.fields.join(',') + ") VALUES(?" + new Array(p.params.length).join(",?") + ")"].join(" "), p.params, ERR => {
-					ERR ? reject(ERR) : isResult ? this._get(this._get_where_params(data, this.uniqueKey)).then(resolve, reject) : resolve(this)
-				})
-			} else {
-				reject()
-			}
-		})
+		const p = this._get_insert_params(data);
+
+		return new Promise((resolve, reject) => p ?
+			this.db.run(['INSERT INTO', this.tableName, "(" + p.fields.join(',') + ") VALUES(?" + new Array(p.params.length).join(",?") + ")"].join(" "), p.params, ERR => ERR ? reject(ERR) : isResult ? this._get(this._get_where_params(data, this.uniqueKey)).then(resolve, reject) : resolve(this)) :
+			reject())
 	}
 
 	delete(data) {
-		var p = this._get_where_params(data);
-		return new Promise((resolve, reject) => {
-			if(p) {
-				this.db.run(['DELETE FROM', this.tableName, 'WHERE', p.where].join(" "), p.params, ERR => {
-					ERR ? reject(ERR) : resolve(this)
-				})
-			} else {
-				reject()
-			}
-		})
+		const p = this._get_where_params(data);
+
+		return new Promise((resolve, reject) => p ?
+			this.db.run(['DELETE FROM', this.tableName, 'WHERE', p.where].join(" "), p.params, ERR => ERR ? reject(ERR) : resolve(this)) :
+			reject())
 	}
 
 	update(data, isResult) {
-		var p = this._get_insert_params(data),
+		const p = this._get_insert_params(data),
 			p2 = this._get_where_params(data);
-		return new Promise((resolve, reject) => {
-			if(p && p2) {
-				this.db.run(['UPDATE', this.tableName, "SET", p.fields.join('=?,') + '=?', 'WHERE', p2.where].join(" "), p.params.concat(p2.params), ERR => {
-					ERR ? reject(ERR) : isResult ? this.get(p2).then(resolve, reject) : resolve(this)
-				})
-			} else {
-				reject()
-			}
-		})
+
+		return new Promise((resolve, reject) => p && p2 ?
+			this.db.run(['UPDATE', this.tableName, "SET", p.fields.join('=?,') + '=?', 'WHERE', p2.where].join(" "), p.params.concat(p2.params), ERR => ERR ? reject(ERR) : isResult ? this.get(p2).then(resolve, reject) : resolve(this)) :
+			reject())
 	}
 
 	put(fields, data, dataHandler) {
-		var p = this._get_where_params(data, fields);
+		const p = this._get_where_params(data, fields);
 
-		return new Promise((resolve, reject) => {
-			this._get(p).then(_data => {
-				if(_data) {
-					dataHandler && dataHandler(_data, data);
-					mixin(_data, data);
+		return new Promise((resolve, reject) => this._get(p).then(_data => {
+			if(_data) {
+				dataHandler && dataHandler(_data, data);
+				mixin(_data, data);
 
-					this.update(_data).then(() => {
-						resolve(_data)
-					}, reject)
-				} else {
-					this.insert(data, true).then(resolve, reject)
-				}
-			}, reject)
-		})
+				this.update(_data).then(() => resolve(_data), reject)
+			} else {
+				this.insert(data, true).then(resolve, reject)
+			}
+		}, reject))
 	}
 
 	bulkInsert(array, isResult) {
-		return Promise.all(array.map(data => {
-			return this.insert(data, isResult)
-		}))
+		return Promise.all(array.map(data => this.insert(data, isResult)))
 	}
 
 	bulkDelete(array) {
-		return Promise.all(array.map(data => {
-			return this.delete(data)
-		}))
+		return Promise.all(array.map(data => this.delete(data)))
 	}
 
 	bulkUpdate(array, isResult) {
-		return Promise.all(array.map(data => {
-			return this.update(data, isResult)
-		}))
+		return Promise.all(array.map(data => this.update(data, isResult)))
 	}
 
 	bulkPut(fields, array, dataHandler) {
-		return Promise.all(array.map(data => {
-			return this.put(fields, data, dataHandler)
-		}))
+		return Promise.all(array.map(data => this.put(fields, data, dataHandler)))
 	}
 }
 
