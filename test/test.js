@@ -12,7 +12,6 @@ var db=new DataBase("./a.db",function(db){
 });
 
 db.ready().then(function(db){
-	var d=Date.now();
 	db.list.bulkInsert(Array.from(new Array(3),function(a,i){
 		return {
 			code:d+i,
@@ -20,7 +19,7 @@ db.ready().then(function(db){
 		}
 	}))
 	
-//	db.list.select().then(function(e){
-//		console.log(e)
-//	});
+	db.list.select(["code","name"]).then(function(e){
+		console.log(e)
+	});
 })
