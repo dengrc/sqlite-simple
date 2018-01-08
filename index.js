@@ -106,7 +106,7 @@ class Table {
 		return this._get_where_params(value, Object.keys(value))
 	}
 
-	_select(where, fields = ['*'], type) {
+	_select(where, fields = '*', type) {
 		return new Promise((resolve, reject) => {
 			let sql = `SELECT ${fields} FROM ${this.tableName}`;
 			const params = where && where.params || [];
@@ -129,7 +129,7 @@ class Table {
 	_each(where, fields) {
 		return this._select(where, fields, 'each')
 	}
-
+	
 	get(value, fields) {
 		return this._get(this._get_data_params(value), fields)
 	}
@@ -138,7 +138,7 @@ class Table {
 		return this._each(this._get_data_params(value), fields)
 	}
 
-	select(fields = ['*']) {
+	select(fields = '*') {
 		return new Promise((resolve, reject) => this.db.all(`SELECT ${fields} FROM ${this.tableName}`, (ERR, rst) => ERR ? reject(ERR) : resolve(rst)))
 	}
 

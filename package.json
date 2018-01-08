@@ -1,6 +1,6 @@
 {
 	"name": "sqlite-simple",
-	"version": "1.2.5",
+	"version": "1.2.6",
 	"description": "常用sql封装成方法，只关注数据",
 	"main": "index.js",
 	"scripts": {
