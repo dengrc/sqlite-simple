@@ -1,12 +1,5 @@
 const sqlite3 = require('sqlite3').verbose()
 
-function mixin(a, b) {
-	for(let k in b) {
-		a[k] = b[k]
-	}
-	return a
-}
-
 class sqliteDataBase {
 	constructor(filename, callback) {
 		this.db = new sqlite3.Database(filename, e => callback(this));
@@ -173,7 +166,7 @@ class Table {
 		return new Promise((resolve, reject) => this._get(p).then(_data => {
 			if(_data) {
 				dataHandler && dataHandler(_data, data);
-				mixin(_data, data);
+				Object.assign(_data, data);
 
 				this.update(_data).then(() => resolve(_data), reject)
 			} else {
