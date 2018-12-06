@@ -1,21 +1,21 @@
 # sqlite-simple
 ## database
-* pushTable([...options])
+* pushTable(\[...options\])
 * ready()
-* transaction(callback[, serialize])
+* transaction(callback\[, serialize\])
 
 ## table
-* insert(data[, isResult])
+* insert(data\[, isResult\])
 * delete(data)
-* update(data[, isResult])
-* select(fields='*')
-* put(data[, fields][, dataHandler])
-* bulkInsert(array[, isResult])
+* update(data\[, isResult\])
+* [select](#select)(fields='*')
+* put(data[, fields]\[, dataHandler\])
+* [bulkInsert](#bulkInsert)(array\[, isResult\])
 * bulkDelete(array)
-* bulkUpdate(array[, isResult])
-* bulkPut(array[, fields][, dataHandler])
-* get(where[, fields])
-* each(where[, fields])
+* bulkUpdate(array\[, isResult\])
+* bulkPut(array\[, fields\]\[, dataHandler\])
+* get(where\[, fields\])
+* each(where\[, fields\])
 
 ###创建数据库、表
 **注意：** 如果需要在 insert、put 操作后获取返回值添加 `uniqueKey`
