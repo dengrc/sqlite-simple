@@ -18,11 +18,11 @@ class sqliteDataBase {
 				let sql = `CREATE TABLE IF NOT EXISTS ${table.tableName}(`;
 				const fields = [];
 
-				for(let field in table.fields) {
+				for (let field in table.fields) {
 					fields.push(`[${field}] ${table.fields[field].join(" ")}`)
 				}
 
-				if(Array.isArray(table.primaryKey)) {
+				if (Array.isArray(table.primaryKey)) {
 					fields.push(`PRIMARY KEY(${table.primaryKey})`)
 				}
 
@@ -66,7 +66,7 @@ class Table {
 			params = [];
 
 		this.fieldsKeys.forEach(k => {
-			if(k in data) {
+			if (k in data) {
 				fields.push(k);
 				params.push(data[k])
 			}
@@ -103,10 +103,10 @@ class Table {
 		return new Promise((resolve, reject) => {
 			let sql = `SELECT ${fields} FROM ${this.tableName}`;
 			const params = where && where.params || [];
-			if(where) {
+			if (where) {
 				sql += ` WHERE ${where.where}`
 			}
-			if(type === "each") {
+			if (type === "each") {
 				const ary = [];
 				this.db[type](sql, params, (ERR, rst) => ERR ? reject(ERR) : ary.push(rst), (ERR, rst) => ERR ? reject(ERR) : resolve(ary))
 			} else {
@@ -122,7 +122,7 @@ class Table {
 	_each(where, fields) {
 		return this._select(where, fields, 'each')
 	}
-	
+
 	get(value, fields) {
 		return this._get(this._get_data_params(value), fields)
 	}
@@ -131,7 +131,11 @@ class Table {
 		return this._each(this._get_data_params(value), fields)
 	}
 
-	select(fields = '*') {
+	select(where, field = "*") {
+		return this._each(where, fields, 'each')
+	}
+
+	all(fields = '*') {
 		return new Promise((resolve, reject) => this.db.all(`SELECT ${fields} FROM ${this.tableName}`, (ERR, rst) => ERR ? reject(ERR) : resolve(rst)))
 	}
 
@@ -164,7 +168,7 @@ class Table {
 		const p = this._get_where_params(data, fields);
 
 		return new Promise((resolve, reject) => this._get(p).then(_data => {
-			if(_data) {
+			if (_data) {
 				dataHandler && dataHandler(_data, data);
 				Object.assign(_data, data);
 
