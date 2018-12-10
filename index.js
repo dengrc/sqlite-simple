@@ -131,7 +131,7 @@ class Table {
 		return this._each(this._get_data_params(value), fields)
 	}
 
-	select(where, field = "*") {
+	select(where, fields = "*") {
 		return this._each(where, fields, 'each')
 	}
 
