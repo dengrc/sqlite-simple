@@ -27,7 +27,24 @@ class sqliteDataBase {
 				}
 
 				const _table = this[table.tableName] = new Table(this.db, table.tableName, table.fields, table.primaryKey, table.uniqueKey)
-				this.db.run(sql + `${fields})`, undefined, () => resolve(_table))
+				this.db.run(sql + `${fields})`, undefined, (ERR, rst) => {
+					ERR ? reject(ERR) : this.db.all(`PRAGMA table_info(${table.tableName})`, undefined, (ERR, rst) => {
+						if (ERR) {
+							reject(ERR)
+							return
+						}
+						const fields = Object.assign({}, table.fields);
+						rst.forEach((field) => {
+							delete fields[field.name]
+						});
+						const addColumns = Object.keys(fields).map((field) => {
+							return `ALTER TABLE ${table.tableName} ADD COLUMN [${field}] ${table.fields[field].join(" ")}`
+						})
+						addColumns.length ? this.db.exec(addColumns.join(";"), undefined, (ERR, rst) => {
+							ERR ? reject(ERR) : resolve(_table)
+						}) : resolve(_table)
+					})
+				})
 			})
 		})).then((e) => {
 			this._readyResolve(this);
