@@ -22,6 +22,6 @@
 		"url": "git://github.com/dengrc/sqlite-simple.git"
 	},
 	"dependencies": {
-		"sqlite3": "^3.1.13"
+		"sqlite3": "^4.0.4"
 	}
 }

@@ -177,7 +177,7 @@ class Table {
 			p2 = this._get_where_params(data);
 
 		return new Promise((resolve, reject) => p && p2 ?
-			this.db.run(`UPDATE ${this.tableName} SET ${p.fields.join('=?,')}=? WHERE ${p2.where}`, p.params.concat(p2.params), ERR => ERR ? reject(ERR) : isResult ? this.get(p2).then(resolve, reject) : resolve(this)) :
+			this.db.run(`UPDATE ${this.tableName} SET ${p.fields.join('=?,')}=? WHERE ${p2.where}`, p.params.concat(p2.params), ERR => ERR ? reject(ERR) : isResult ? this._get(p2).then(resolve, reject) : resolve(this)) :
 			reject())
 	}
 
